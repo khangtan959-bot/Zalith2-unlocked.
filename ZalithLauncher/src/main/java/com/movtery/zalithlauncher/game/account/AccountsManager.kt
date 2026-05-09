@@ -213,15 +213,16 @@ object AccountsManager {
         val currentAccount = getCurrentAccount()
         val isOffline = checkLimit()
         _currentAccountFlow.update {
-            //若处于非正版状态，不允许使用账号
+            // Đã xóa giới hạn khóa tài khoản offline
             if (isOffline) null else currentAccount
         }
         _isOffline.update { isOffline }
     }
 
     private fun checkLimit(): Boolean {
-        val circumventLimit = File(PathManager.DIR_FILES_EXTERNAL, "circumventLimit")
-        return !circumventLimit.exists() && !isInGreaterChina() && !hasMicrosoftAccount()
+        // [ĐÃ SỬA] Luôn trả về false để bỏ qua kiểm tra vùng và tài khoản bản quyền.
+        // Hỗ trợ Minecraft Crack (Offline) cho mọi người dùng.
+        return false
     }
 
     /**

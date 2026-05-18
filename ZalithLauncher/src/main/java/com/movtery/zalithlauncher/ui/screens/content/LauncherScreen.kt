@@ -19,7 +19,7 @@
 package com.movtery.zalithlauncher.ui.screens.content
 
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +36,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
@@ -44,6 +48,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -52,6 +59,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -70,6 +78,7 @@ import com.movtery.zalithlauncher.ui.components.defaultRichTextStyle
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.AccountAvatar
+import com.movtery.zalithlauncher.ui.screens.content.elements.CommonVersionInfoLayout
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionIconImage
 import com.movtery.zalithlauncher.ui.screens.main.custom_home.MarkdownBlock
 import com.movtery.zalithlauncher.ui.screens.main.custom_home.customHomePage
@@ -225,6 +234,7 @@ private fun ContentMenu(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RightMenuContent(
     modifier: Modifier = Modifier,
@@ -259,30 +269,63 @@ private fun RightMenuContent(
             onClick = toAccountManageScreen
         )
 
-        Row(
+        var showList by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = showList,
+            onExpandedChange = { showList = it },
             modifier = Modifier.constrainAs(versionManagerLayout) {
                 start.linkTo(parent.start)
                 end.linkTo(parent.end)
                 bottom.linkTo(launchButton.top)
             },
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            VersionManagerLayout(
-                isRefreshing = isRefreshing,
-                version = version,
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(8.dp),
-                swapToVersionManage = toVersionManageScreen
-            )
-            version?.takeIf { !isRefreshing && it.isValid() }?.let {
-                IconButton(
-                    modifier = Modifier.padding(end = 8.dp),
-                    onClick = toVersionSettingsScreen
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_settings_filled),
-                        contentDescription = stringResource(R.string.versions_manage_settings)
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                VersionManagerLayout(
+                    isRefreshing = isRefreshing,
+                    version = version,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp),
+                    swapToVersionManage = toVersionManageScreen,
+                    openListMenu = { showList = true },
+                )
+                version?.takeIf { !isRefreshing && it.isValid() }?.let {
+                    IconButton(
+                        modifier = Modifier.padding(end = 8.dp),
+                        onClick = toVersionSettingsScreen
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings_filled),
+                            contentDescription = stringResource(R.string.versions_manage_settings)
+                        )
+                    }
+                }
+            }
+
+            ExposedDropdownMenu(
+                expanded = showList,
+                onDismissRequest = { showList = false },
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                VersionsManager.versions.forEach { version0 ->
+                    DropdownMenuItem(
+                        text = {
+                            CommonVersionInfoLayout(
+                                modifier = Modifier.fillMaxWidth(),
+                                version = version0,
+                                iconSize = 28.dp
+                            )
+                        },
+                        onClick = {
+                            if (version == version0) return@DropdownMenuItem
+                            VersionsManager.saveVersion(version0)
+                            showList = false
+                        }
                     )
                 }
             }
@@ -345,13 +388,18 @@ private fun RightMenu(
 private fun VersionManagerLayout(
     isRefreshing: Boolean,
     version: Version?,
+    swapToVersionManage: () -> Unit,
+    openListMenu: () -> Unit,
     modifier: Modifier = Modifier,
-    swapToVersionManage: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
             .clip(shape = MaterialTheme.shapes.large)
-            .clickable(onClick = swapToVersionManage)
+            .combinedClickable(
+                role = Role.Button,
+                onClick = swapToVersionManage,
+                onLongClick = openListMenu
+            )
             .padding(PaddingValues(all = 8.dp))
     ) {
         if (isRefreshing) {

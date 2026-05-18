@@ -257,6 +257,16 @@ object VersionsManager {
 
     /**
      * 保存当前选择的版本
+     * @return 是否执行保存
+     */
+    fun saveVersion(version: Version, refresh: Boolean = true): Boolean {
+        if (!version.isValid()) return false
+        saveCurrentVersion(version.getVersionName(), refresh)
+        return true
+    }
+
+    /**
+     * 保存当前选择的版本
      */
     fun saveCurrentVersion(versionName: String, refresh: Boolean = true) {
         runCatching {

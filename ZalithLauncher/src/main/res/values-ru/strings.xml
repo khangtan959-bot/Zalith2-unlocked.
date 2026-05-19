@@ -1221,4 +1221,14 @@
     <string name="festivals_new_year">С Новым Годом!</string>
     <string name="festivals_april_fools">С Первым апреля!</string>
     <string name="festivals_christmas">С Рождеством!</string>
+    <string name="game_vulkan_check_title">Vulkan проверен</string>
+    <string name="game_vulkan_check_text">Проверьте, поддерживает ли ваше устройство запуск Minecraft 26.2+ с Vulkan. Результаты приведены только для справки.</string>
+    <string name="game_vulkan_check_version">Vulkan версия: %s</string>
+    <string name="game_vulkan_check_turnip">Использование Turnip: %s</string>
+    <string name="game_vulkan_check_extensions">Необходимые расширения:</string>
+    <string name="game_vulkan_check_missing_extensions">Отсутствующие расширения:</string>
+    <string name="game_vulkan_check_features">Необходимые функции:</string>
+    <string name="game_vulkan_check_missing_features">Отсутствующие функции:</string>
+    <string name="game_vulkan_check_unsupp">Ваше устройство не поддерживает запуск Minecraft 26.2+ с Vulkan.</string>
+    <string name="game_vulkan_check_supp">Ваше устройство поддерживает запуск Minecraft 26.2+ с Vulkan.</string>
 </resources>

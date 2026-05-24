@@ -130,7 +130,7 @@ import com.movtery.zalithlauncher.ui.screens.game.elements.SendKeycodeState
 import com.movtery.zalithlauncher.ui.screens.game.multiplayer.TerracottaOperation
 import com.movtery.zalithlauncher.ui.screens.game.multiplayer.rememberTerracottaViewModel
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.ControlEditor
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.viewmodel.EditorViewModel
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
@@ -150,6 +150,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.lwjgl.glfw.CallbackBridge
 import java.io.File
+
+private const val TAG = "GameScreen"
 
 private class GameViewModel(
     private val version: Version,
@@ -309,7 +311,7 @@ private class GameViewModel(
             try {
                 loadLayoutFromFile(it)
             } catch (e: Exception) {
-                lWarning("Failed to load control layout: $it", e)
+                Logger.warning(TAG, "Failed to load control layout: $it", e)
                 null
             }
         } ?: EmptyControlLayout

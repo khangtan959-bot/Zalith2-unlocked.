@@ -45,7 +45,7 @@ import com.movtery.zalithlauncher.game.account.yggdrasil.findUsing
 import com.movtery.zalithlauncher.game.account.yggdrasil.getPlayerProfile
 import com.movtery.zalithlauncher.game.account.yggdrasil.getSkinModel
 import com.movtery.zalithlauncher.path.GLOBAL_CLIENT
-import com.movtery.zalithlauncher.utils.logging.Logger.lDebug
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.network.httpPostJson
 import com.movtery.zalithlauncher.utils.network.safeBodyAsJson
 import com.movtery.zalithlauncher.utils.network.submitForm
@@ -72,6 +72,8 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.coroutines.CoroutineContext
+
+private const val TAG = "MicrosoftAuth"
 
 private val SCOPES = listOf("XboxLive.signin", "offline_access", "openid", "profile", "email")
 private const val TENANT = "/consumers"
@@ -143,7 +145,7 @@ suspend fun getTokenResponse(
             handleClientRequestException(e, pollingInterval)
             pollingInterval = adjustPollingInterval(e, pollingInterval)
         } catch (e: CancellationException) {
-            lDebug("Authentication cancelled")
+            Logger.debug(TAG, "Authentication cancelled")
             throw e
         }
 
@@ -160,7 +162,7 @@ private suspend fun handleClientRequestException(e: ClientRequestException, inte
     val errorBody = e.response.safeBodyAsJson<JsonObject>()
     when (errorBody["error"]?.jsonPrimitive?.content) {
         "authorization_pending" -> Unit /* 正常情况，继续轮询 */
-        "slow_down" -> lDebug("Slowing down polling to ${interval + 1000}ms")
+        "slow_down" -> Logger.debug(TAG, "Slowing down polling to ${interval + 1000}ms")
         else -> throw e
     }
 }

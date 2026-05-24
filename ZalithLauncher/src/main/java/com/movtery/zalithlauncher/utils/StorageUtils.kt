@@ -33,8 +33,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.movtery.zalithlauncher.R
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import java.io.File
+
+private const val TAG = "StorageUtils"
 
 private const val REQUEST_CODE_PERMISSIONS: Int = 0
 private var hasStoragePermission: Boolean = false
@@ -192,7 +194,7 @@ fun getExternalSDCardPaths(context: Context): List<SDCardInfo>? {
             } else null
         }
     }.onFailure { e ->
-        lWarning("Failed to get external SD Card paths.", e)
+        Logger.warning(TAG, "Failed to get external SD Card paths.", e)
     }.getOrNull()
 }
 

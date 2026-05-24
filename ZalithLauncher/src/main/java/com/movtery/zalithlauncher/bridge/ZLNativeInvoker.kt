@@ -29,9 +29,11 @@ import com.movtery.zalithlauncher.context.GlobalContext
 import com.movtery.zalithlauncher.game.launch.Launcher
 import com.movtery.zalithlauncher.utils.file.shareFile
 import com.movtery.zalithlauncher.utils.killProgress
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.network.openLink
 import java.io.File
+
+private const val TAG = "ZLNativeInvoker"
 
 @Keep
 object ZLNativeInvoker {
@@ -42,19 +44,20 @@ object ZLNativeInvoker {
     @JvmStatic
     fun openLink(link: String) {
         (GlobalContext as? Activity)?.let { activity ->
+            Logger.info(TAG, "collect link: $link")
             activity.runOnUiThread {
                 if (link.startsWith("file:")) {
-                    val newLink = formatFilePath(link)
-                    lInfo("open link: $newLink")
+                    val newLink = formatFilePath(link) ?: return@runOnUiThread
+                    Logger.info(TAG, "open link: $newLink")
 
                     val file = File(newLink)
                     if (link.endsWith('/')) {
-                        //可能是一个目录，创建并发起浏览目录请求
+                        //可能是一个目录，创建并发起浏览目录请�?
                         file.mkdirs()
                         staticLauncher?.openPath(file)
                     } else {
                         shareFile(activity, file)
-                        lInfo("In-game Share File: ${file.absolutePath}")
+                        Logger.info(TAG, "In-game Share File: ${file.absolutePath}")
                     }
                 } else {
                     activity.openLink(link, "*/*")

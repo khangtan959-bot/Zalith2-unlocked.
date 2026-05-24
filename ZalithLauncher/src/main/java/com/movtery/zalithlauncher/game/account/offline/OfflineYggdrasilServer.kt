@@ -21,9 +21,7 @@ package com.movtery.zalithlauncher.game.account.offline
 import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.game.account.Account
 import com.movtery.zalithlauncher.game.account.wardrobe.SkinModelType
-import com.movtery.zalithlauncher.utils.logging.Logger.lDebug
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
+import com.movtery.zalithlauncher.utils.logging.Logger
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -59,6 +57,8 @@ import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+
+private const val TAG = "OfflineYggdrasil"
 
 /**
  * 离线账号 Yggdrasil 服务器，用于本地加载玩家皮肤、披风
@@ -98,7 +98,7 @@ class OfflineYggdrasilServer(
                     runCatching {
                         block()
                     }.onFailure { e ->
-                        lError("Internal server error", e)
+                        Logger.error(TAG, "Internal server error", e)
                     }
                 }
 
@@ -184,7 +184,7 @@ class OfflineYggdrasilServer(
         charactersByUuid[character.uuid.lowercase()] = character
         charactersByName[character.name.lowercase()] = character
 
-        lInfo("Added character ${character.name} (${character.uuid}), skin hash = ${character.skin?.skinHash}")
+        Logger.info(TAG, "Added character ${character.name} (${character.uuid}), skin hash = ${character.skin?.skinHash}")
     }
 
 
@@ -232,14 +232,14 @@ class OfflineYggdrasilServer(
         val username = call.request.queryParameters["username"] ?: return buildJsonObject {
             put("error", JsonPrimitive("Missing username"))
         }.toString()
-        lDebug("Try find profile with username $username")
+        Logger.debug(TAG, "Try find profile with username $username")
 
         val character = charactersByName[username.lowercase()] ?: return buildJsonObject { }.toString().also {
-            lDebug("Profile with username $username not found")
+            Logger.debug(TAG, "Profile with username $username not found")
         }
 
         return character.toCompleteResponse("http://localhost:${getPort()}", this::sign).also {
-            lDebug("Found profile with username $username")
+            Logger.debug(TAG, "Found profile with username $username")
         }
     }
 
@@ -247,20 +247,20 @@ class OfflineYggdrasilServer(
         val uuid = call.parameters["uuid"] ?: return buildJsonObject {
             put("error", JsonPrimitive("Missing uuid"))
         }.toString()
-        lDebug("Try find profile with uuid $uuid")
+        Logger.debug(TAG, "Try find profile with uuid $uuid")
 
         val character = charactersByUuid[uuid.lowercase()] ?: return buildJsonObject { }.toString().also {
-            lDebug("Profile with uuid $uuid not found")
+            Logger.debug(TAG, "Profile with uuid $uuid not found")
         }
 
         return character.toCompleteResponse("http://localhost:${getPort()}", this::sign).also {
-            lDebug("Found profile with uuid $uuid")
+            Logger.debug(TAG, "Found profile with uuid $uuid")
         }
     }
 
     private suspend fun texture(call: ApplicationCall) {
         val hash = call.parameters["hash"] ?: return call.respond(HttpStatusCode.NotFound)
-        lDebug("Try find skin with hash $hash")
+        Logger.debug(TAG, "Try find skin with hash $hash")
 
         // 查找对应hash的皮肤或披风
         val match = charactersByUuid.values
@@ -273,12 +273,12 @@ class OfflineYggdrasilServer(
             }
 
         if (match != null) {
-            lDebug("Skin with hash $hash found")
+            Logger.debug(TAG, "Skin with hash $hash found")
             call.response.header("Cache-Control", "max-age=2592000, public")
             call.response.header("Etag", "\"$hash\"")
             call.respondBytes(match, ContentType.Image.PNG)
         } else {
-            lDebug("Skin with hash $hash not found")
+            Logger.debug(TAG, "Skin with hash $hash not found")
             call.respond(HttpStatusCode.NotFound)
         }
     }

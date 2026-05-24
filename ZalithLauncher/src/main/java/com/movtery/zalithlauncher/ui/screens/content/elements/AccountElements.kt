@@ -146,12 +146,14 @@ import com.movtery.zalithlauncher.ui.theme.itemColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.ui.theme.onItemColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
+import com.movtery.zalithlauncher.utils.logging.Logger
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
+
+private const val TAG = "AccountElements"
 
 /** 账号登录菜单操作状态 */
 sealed interface LoginMenuOperation {
@@ -1625,7 +1627,7 @@ private fun getCapeAvatar(cape: PlayerProfile.Cape, size: Int): Bitmap? {
                 return getCapeAvatar(bitmap, size)
             }
         }.onFailure { e ->
-            lError("Failed to load cape avatar from locally!", e)
+            Logger.error(TAG, "Failed to load cape avatar from locally!", e)
         }
     }
     return null
@@ -1653,7 +1655,7 @@ private fun getSkinAvatarFromAccount(context: Context, account: Account, size: I
                 return getSkinAvatar(bitmap, size)
             }
         }.onFailure { e ->
-            lError("Failed to load skin avatar from locally!", e)
+            Logger.error(TAG, "Failed to load skin avatar from locally!", e)
         }
     }
     return getDefaultAvatar(context, size)

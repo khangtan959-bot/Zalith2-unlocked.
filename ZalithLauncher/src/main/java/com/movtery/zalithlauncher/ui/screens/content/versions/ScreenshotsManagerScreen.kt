@@ -117,7 +117,7 @@ import com.movtery.zalithlauncher.ui.theme.itemColor
 import com.movtery.zalithlauncher.ui.theme.onItemColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
 import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -131,6 +131,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
+
+private const val TAG = "ScreenshotsManager"
 
 /**
  * 游戏内截图信息
@@ -263,7 +265,7 @@ class ScreenshotsManageViewModel @Inject constructor(
                 }
                 onSuccess()
             } catch (e: Exception) {
-                lError("Failed to export screenshots!", e)
+                Logger.error(TAG, "Failed to export screenshots!", e)
                 onFailed(e)
             }
         }
@@ -745,7 +747,7 @@ private fun ScreenshotGrid(
                                 }
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                lError("Failed to open image", e)
+                                Logger.error(TAG, "Failed to open image", e)
                             }
                         }
                     )

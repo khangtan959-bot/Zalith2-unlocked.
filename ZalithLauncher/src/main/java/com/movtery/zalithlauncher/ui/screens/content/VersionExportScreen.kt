@@ -77,7 +77,7 @@ import com.movtery.zalithlauncher.ui.screens.content.versions.export.ExportTypeS
 import com.movtery.zalithlauncher.ui.screens.navigateTo
 import com.movtery.zalithlauncher.ui.screens.onBack
 import com.movtery.zalithlauncher.ui.screens.rememberTransitionSpec
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
 import com.movtery.zalithlauncher.viewmodel.sendKeepScreen
@@ -98,6 +98,8 @@ import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.channels.UnresolvedAddressException
+
+private const val TAG = "VersionExportScreen"
 
 private sealed interface PackExportOperation {
     data object None : PackExportOperation
@@ -647,7 +649,7 @@ private fun PackExportOperation(
         }
         is PackExportOperation.Error -> {
             val th = operation.throwable
-            lError("Failed to download the game!", th)
+            Logger.error(TAG, "Failed to download the game!", th)
             val message = when (th) {
                 is HttpRequestTimeoutException, is SocketTimeoutException -> stringResource(R.string.error_timeout)
                 is UnknownHostException, is UnresolvedAddressException -> stringResource(R.string.error_network_unreachable)

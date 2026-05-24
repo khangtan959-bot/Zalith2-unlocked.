@@ -25,8 +25,7 @@ import com.movtery.zalithlauncher.game.account.wardrobe.SkinFileDownloader
 import com.movtery.zalithlauncher.game.account.wardrobe.SkinModelType
 import com.movtery.zalithlauncher.game.account.wardrobe.getLocalUUIDWithSkinModel
 import com.movtery.zalithlauncher.path.PathManager
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
+import com.movtery.zalithlauncher.utils.logging.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.joinAll
@@ -34,6 +33,8 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.util.UUID
+
+private const val TAG = "Account"
 
 @Entity(tableName = "accounts")
 data class Account(
@@ -91,9 +92,9 @@ data class Account(
             SkinFileDownloader().download(url, skinFile, profileId) { modelType ->
                 this.skinModelType = modelType
             }
-            lInfo("Update skin success")
+            Logger.info(TAG, "Update skin success")
         }.onFailure { e ->
-            lError("Could not update skin", e)
+            Logger.error(TAG, "Could not update skin", e)
         }
         AccountsManager.refreshWardrobe()
     }
@@ -104,9 +105,9 @@ data class Account(
 
         runCatching {
             CapeFileDownloader().download(url, capeFile, profileId)
-            lInfo("Update cape success")
+            Logger.info(TAG, "Update cape success")
         }.onFailure { e ->
-            lError("Could not update cape", e)
+            Logger.error(TAG, "Could not update cape", e)
         }
         AccountsManager.refreshWardrobe()
     }

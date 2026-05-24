@@ -42,15 +42,15 @@ import com.movtery.zalithlauncher.setting.unit.getOrMin
 import com.movtery.zalithlauncher.utils.device.Architecture
 import com.movtery.zalithlauncher.utils.device.Architecture.ARCH_X86
 import com.movtery.zalithlauncher.utils.device.Architecture.is64BitsDevice
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.oracle.dalvik.VMLauncher
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.IOException
 import java.util.Locale
 import java.util.TimeZone
+
+private const val TAG = "Launcher"
 
 abstract class Launcher(
     val onExit: (code: Int, isSignal: Boolean) -> Unit,
@@ -203,7 +203,7 @@ abstract class Launcher(
             val stripped = arg.substringBefore('=')
             val overridden = userArguments.any { it.startsWith(stripped) }
             if (overridden) {
-                lInfo("Arg skipped: $arg")
+                Logger.info(TAG, "Arg skipped: $arg")
             }
             !overridden
         }
@@ -232,7 +232,7 @@ abstract class Launcher(
             runCatching {
                 resolvFile.writeText(configText)
             }.onFailure {
-                lWarning("Failed to create resolv.conf", it)
+                Logger.warning(TAG, "Failed to create resolv.conf", it)
                 FileUtils.deleteQuietly(resolvFile)
             }
         }
@@ -378,7 +378,7 @@ abstract class Launcher(
             runCatching {
                 Os.setenv(key, value, true)
             }.onFailure {
-                lError("Unable to set environment variable.", it)
+                Logger.error(TAG, "Unable to set environment variable.", it)
             }
         }
     }
@@ -479,7 +479,7 @@ fun parseJavaArguments(args: String): List<String> {
                     parsedArguments.add(parsedSubstring)
                 }
             } else {
-                lWarning("Removed improper arguments: $parsedSubstring")
+                Logger.warning(TAG, "Removed improper arguments: $parsedSubstring")
             }
         }
     }

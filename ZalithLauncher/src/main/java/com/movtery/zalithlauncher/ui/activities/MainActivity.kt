@@ -72,8 +72,7 @@ import com.movtery.zalithlauncher.utils.device.VulkanChecker
 import com.movtery.zalithlauncher.utils.festival.getTodayFestivals
 import com.movtery.zalithlauncher.utils.file.shareFile
 import com.movtery.zalithlauncher.utils.isChinese
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.network.openLink
 import com.movtery.zalithlauncher.utils.network.openLinkInternal
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
@@ -100,6 +99,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
+
+private const val TAG = "MainActivity"
 
 @AndroidEntryPoint
 class MainActivity : BaseAppCompatActivity() {
@@ -196,11 +197,11 @@ class MainActivity : BaseAppCompatActivity() {
             eventViewModel.events.collect { event ->
                 when (event) {
                     is EventViewModel.Event.Key.StartKeyCapture -> {
-                        lInfo("Start key capture!")
+                        Logger.info("CollectEvent", "Start key capture!")
                         isCaptureKey = true
                     }
                     is EventViewModel.Event.Key.StopKeyCapture -> {
-                        lInfo("Stop key capture!")
+                        Logger.info("CollectEvent", "Stop key capture!")
                         isCaptureKey = false
                     }
                     is EventViewModel.Event.OpenLink -> {
@@ -533,7 +534,7 @@ class MainActivity : BaseAppCompatActivity() {
                                 this@MainActivity.openLink(trimmed)
                             }
                         } else {
-                            lWarning("Blocked unsafe URL from homepage event: $trimmed")
+                            Logger.warning("HomePage", "Blocked unsafe URL from homepage event: $trimmed")
                         }
                     }
                 }
@@ -548,7 +549,7 @@ class MainActivity : BaseAppCompatActivity() {
                                 parms[1].trim()
                             } else null
                         }.onFailure { e ->
-                            lWarning("Failed to parse quick join server parameters: $raw", e)
+                            Logger.warning("HomePage", "Failed to parse quick join server parameters: $raw", e)
                         }.getOrNull()
                     }
                     if (!serverIp.isNullOrEmpty()) {
@@ -556,7 +557,7 @@ class MainActivity : BaseAppCompatActivity() {
                         if (serverIp.none { it.code < 32 }) {
                             launchGameViewModel.tryPlayServer(serverIp)
                         } else {
-                            lWarning("Invalid server address from homepage event: $serverIp")
+                            Logger.warning("HomePage", "Invalid server address from homepage event: $serverIp")
                         }
                     } else {
                         launchGameViewModel.tryLaunch()
@@ -590,11 +591,11 @@ class MainActivity : BaseAppCompatActivity() {
                     }
                 }
                 else -> {
-                    lWarning("Unknown homepage event: key=$key, data=$data")
+                    Logger.warning("HomePage", "Unknown homepage event: key=$key, data=$data")
                 }
             }
         }.onFailure { e ->
-            lWarning("Failed to handle homepage event: key=$key, data=$data", e)
+            Logger.warning("HomePage", "Failed to handle homepage event: key=$key, data=$data", e)
         }
     }
 
@@ -773,7 +774,7 @@ class MainActivity : BaseAppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (isCaptureKey) {
-            lInfo("Capture key event: $event")
+            Logger.info(TAG, "Capture key event: $event")
             eventViewModel.sendEvent(EventViewModel.Event.Key.OnKeyDown(event))
             return true
         }

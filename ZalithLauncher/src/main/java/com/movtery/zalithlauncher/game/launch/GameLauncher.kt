@@ -250,20 +250,20 @@ class GameLauncher(
         val renderer = Renderers.getCurrentRenderer()
 
         appendTitle("Launch Minecraft")
-        append("Info: Launcher version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-        append("Info: Architecture: ${Architecture.archAsString(ZLApplication.DEVICE_ARCHITECTURE)}")
-        append("Info: Device model: ${Build.MANUFACTURER}, ${Build.MODEL}")
-        append("Info: API version: ${Build.VERSION.SDK_INT}")
-        append("Info: Renderer: ${renderer.getRendererName()}")
+        append("▷ Launcher version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        append("▷ Architecture: ${Architecture.archAsString(ZLApplication.DEVICE_ARCHITECTURE)}")
+        append("▷ Device model: ${Build.MANUFACTURER}, ${Build.MODEL}")
+        append("▷ API version: ${Build.VERSION.SDK_INT}")
+        append("▷ Renderer: ${renderer.getRendererName()}")
         renderer.getRendererSummary()?.let { summary ->
-            append("Info: Renderer Summary: $summary")
+            append("▷ Renderer Summary: $summary")
         }
-        append("Info: Selected Minecraft version: ${version.getVersionName()}")
-        append("Info: Minecraft Info: $mcInfo")
-        append("Info: Game Path: ${version.getGameDir().absolutePath} (Isolation: ${version.isIsolation()})")
-        append("Info: Custom Java arguments: $javaArguments")
-        append("Info: Java Runtime: $javaRuntime")
-        append("Info: Account: ${account.username} (${account.accountType})")
+        append("▷ Selected Minecraft version: ${version.getVersionName()}")
+        append("▷ Minecraft Info: $mcInfo")
+        append("▷ Game Path: ${version.getGameDir().absolutePath} (Isolation: ${version.isIsolation()})")
+        append("▷ Custom Java arguments: $javaArguments")
+        append("▷ Java Runtime: $javaRuntime")
+        append("▷ Account: ${account.username} (${account.accountType})")
     }
 
     /**

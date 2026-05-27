@@ -126,11 +126,11 @@ abstract class Launcher(
             val arg = iterator.next()
             if (arg.startsWith("--accessToken") && iterator.hasNext()) {
                 iterator.next()
-                LoggerBridge.append("JVMArgs: $arg")
-                LoggerBridge.append("JVMArgs: ********************")
+                LoggerBridge.append("▷ $arg")
+                LoggerBridge.append("▷ ********************")
                 continue
             }
-            LoggerBridge.append("JVMArgs: $arg")
+            LoggerBridge.append("▷ $arg")
         }
 
         ZLBridge.setupExitMethod(context.applicationContext)
@@ -374,7 +374,7 @@ abstract class Launcher(
     private fun setEnv(screenSize: IntSize) {
         val envMap = initEnv(screenSize)
         envMap.forEach { (key, value) ->
-            LoggerBridge.append("Added env: $key = $value")
+            LoggerBridge.append("▷ $key = $value")
             runCatching {
                 Os.setenv(key, value, true)
             }.onFailure {

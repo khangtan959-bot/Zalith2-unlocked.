@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -71,6 +72,7 @@ import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersion
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersions
 import com.movtery.zalithlauncher.game.versioninfo.models.isType
+import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.CheckChip
 import com.movtery.zalithlauncher.ui.components.EdgeDirection
@@ -81,14 +83,14 @@ import com.movtery.zalithlauncher.ui.components.fadeEdge
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
+import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
 import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.utils.classes.Quadruple
 import com.movtery.zalithlauncher.utils.formatDate
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.string.isEmptyOrBlank
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import io.ktor.client.plugins.HttpRequestTimeoutException
@@ -99,6 +101,8 @@ import kotlinx.coroutines.launch
 import java.net.ConnectException
 import java.net.UnknownHostException
 import java.nio.channels.UnresolvedAddressException
+
+private const val TAG = "SelectGameVersion"
 
 /** 版本列表加载状态 */
 private sealed interface VersionState {
@@ -172,7 +176,7 @@ private class VersionsViewModel: ViewModel() {
                 val allVersions = MinecraftVersions.allVersions.value
                 VersionState.None(allVersions.filterVersions(versionFilter))
             }.getOrElse { e ->
-                lWarning("Failed to get version manifest!", e)
+                Logger.warning(TAG, "Failed to get version manifest!", e)
                 val message: Pair<Int, Array<Any>?> = when(e) {
                     is HttpRequestTimeoutException -> R.string.error_timeout to null
                     is UnknownHostException, is UnresolvedAddressException -> R.string.error_network_unreachable to null
@@ -187,7 +191,7 @@ private class VersionsViewModel: ViewModel() {
                         res to arrayOf(statusCode)
                     }
                     else -> {
-                        lError("An unknown exception was caught!", e)
+                        Logger.error(TAG, "An unknown exception was caught!", e)
                         val errorMessage = e.localizedMessage ?: e.message ?: e::class.qualifiedName ?: "Unknown error"
                         R.string.error_unknown to arrayOf(errorMessage)
                     }
@@ -286,8 +290,6 @@ fun SelectGameVersionScreen(
 
                         VersionList(
                             modifier = Modifier.weight(1f),
-                            itemContainerColor = cardColor(),
-                            itemContentColor = onCardColor(),
                             versions = state.versions,
                             onVersionSelect = onVersionSelect,
                             openLink = { url ->
@@ -437,8 +439,6 @@ private fun VersionTypeItem(
 @Composable
 private fun VersionList(
     modifier: Modifier = Modifier,
-    itemContainerColor: Color,
-    itemContentColor: Color,
     versions: List<MinecraftVersion>,
     onVersionSelect: (String) -> Unit,
     openLink: (url: String) -> Unit
@@ -459,8 +459,6 @@ private fun VersionList(
                 onAccessWiki = { wikiUrl ->
                     openLink(wikiUrl)
                 },
-                color = itemContainerColor,
-                contentColor = itemContentColor
             )
         }
     }
@@ -472,8 +470,11 @@ private fun VersionItemLayout(
     version: MinecraftVersion,
     onClick: () -> Unit = {},
     onAccessWiki: (String) -> Unit = {},
-    color: Color,
-    contentColor: Color,
+    shape: Shape = MaterialTheme.shapes.large,
+    influencedByBackground: Boolean = true,
+    color: Color = cardColor(influencedByBackground),
+    contentColor: Color = onCardColor(),
+    blur: Int = AllSettings.backgroundBlur.state,
 ) {
     val scale = remember { Animatable(initialValue = 0.95f) }
     LaunchedEffect(Unit) {
@@ -485,13 +486,14 @@ private fun VersionItemLayout(
     Surface(
         modifier = modifier.graphicsLayer(scaleY = scale.value, scaleX = scale.value),
         onClick = onClick,
-        shape = MaterialTheme.shapes.large,
+        shape = shape,
         color = color,
         contentColor = contentColor
     ) {
         Row(
             modifier = Modifier
-                .clip(shape = MaterialTheme.shapes.large)
+                .clip(shape = shape)
+                .backgroundGlass(blur, color, influencedByBackground)
                 .padding(all = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

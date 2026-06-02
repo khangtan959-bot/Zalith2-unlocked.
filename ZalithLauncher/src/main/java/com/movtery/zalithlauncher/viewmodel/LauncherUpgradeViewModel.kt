@@ -52,8 +52,7 @@ import com.movtery.zalithlauncher.ui.upgrade.UpgradeFilesDialog
 import com.movtery.zalithlauncher.upgrade.GithubContentApi
 import com.movtery.zalithlauncher.upgrade.RemoteData
 import com.movtery.zalithlauncher.upgrade.TooFrequentOperationException
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.network.safeBodyAsJson
 import com.movtery.zalithlauncher.utils.network.withRetry
 import com.movtery.zalithlauncher.utils.string.decodeBase64
@@ -65,6 +64,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+
+private const val TAG = "LauncherUpgradeVM"
 
 sealed interface LauncherUpgradeOperation {
     data object None : LauncherUpgradeOperation
@@ -129,7 +130,7 @@ class LauncherUpgradeViewModel: ViewModel() {
                     lastCheckTime = AllSettings.lastUpgradeCheck.getValue()
                 )
             ) {
-                lInfo("App start check: Within rate limit, skipping")
+                Logger.info(TAG, "App start check: Within rate limit, skipping")
                 return@launch
             }
 
@@ -201,17 +202,17 @@ class LauncherUpgradeViewModel: ViewModel() {
             }.getOrElse { e ->
                 if (Locale.getDefault().language == "zh") {
                     runCatching {
-                        lInfo("Check for updates in the Chinese region.")
+                        Logger.info(TAG, "Check for updates in the Chinese region.")
                         //在中国地区，可能因为无法访问 Github API 导致获取更新信息失败
                         withRetry(logTag = "LauncherUpgrade_Chinese", maxRetries = 2) {
                             GLOBAL_CLIENT.get(LATEST_API_CHINESE_URL).safeBodyAsJson<RemoteData>()
                         }
                     }.getOrElse { e ->
-                        lWarning("Failed to check for launcher upgrade!", e)
+                        Logger.warning(TAG, "Failed to check for launcher upgrade!", e)
                         null
                     }
                 } else {
-                    lWarning("Failed to check for launcher upgrade!", e)
+                    Logger.warning(TAG, "Failed to check for launcher upgrade!", e)
                     null
                 }
             }
@@ -238,16 +239,16 @@ class LauncherUpgradeViewModel: ViewModel() {
             when {
                 ignoreDismissedVersions && lastIgnored == data.code -> {
                     //忽略这次更新
-                    lInfo("Launcher update detected: $currentVersionCode -> ${data.code}, but ignored by user")
+                    Logger.info(TAG, "Launcher update detected: $currentVersionCode -> ${data.code}, but ignored by user")
                 }
                 else -> {
                     //弹出更新弹窗
-                    lInfo("Launcher update detected: $currentVersionCode -> ${data.code}, dialog shown to user")
+                    Logger.info(TAG, "Launcher update detected: $currentVersionCode -> ${data.code}, dialog shown to user")
                     onUpgrade(data)
                 }
             }
         } else {
-            lInfo("Launcher is running the latest version: $currentVersionCode")
+            Logger.info(TAG, "Launcher is running the latest version: $currentVersionCode")
             onIsLatest()
         }
     }

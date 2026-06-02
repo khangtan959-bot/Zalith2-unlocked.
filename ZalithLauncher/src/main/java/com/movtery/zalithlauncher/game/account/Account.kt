@@ -25,8 +25,7 @@ import com.movtery.zalithlauncher.game.account.wardrobe.SkinFileDownloader
 import com.movtery.zalithlauncher.game.account.wardrobe.SkinModelType
 import com.movtery.zalithlauncher.game.account.wardrobe.getLocalUUIDWithSkinModel
 import com.movtery.zalithlauncher.path.PathManager
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
+import com.movtery.zalithlauncher.utils.logging.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.joinAll
@@ -34,6 +33,8 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.util.UUID
+
+private const val TAG = "Account"
 
 @Entity(tableName = "accounts")
 data class Account(
@@ -62,6 +63,9 @@ data class Account(
 
     fun getCapeFile() = File(PathManager.DIR_ACCOUNT_CAPE, "$uniqueUUID.png")
 
+    private fun getTempSkinFile() = File(PathManager.DIR_CACHE, "account_skin_${uniqueUUID}.tmp.png")
+    private fun getTempCapeFile() = File(PathManager.DIR_CACHE, "account_cape_${uniqueUUID}.tmp.png")
+
     /**
      * 下载并更新账号的皮肤文件
      */
@@ -72,42 +76,44 @@ data class Account(
             else -> null
         }
         baseUrl?.let { url ->
-            listOf(
-                async {
-                    updateSkin(url)
-                },
-                async {
-                    updateCape(url)
-                }
-            ).joinAll()
+            val skinJob = async { updateSkin(url) }
+            val capeJob = async { updateCape(url) }
+            joinAll(skinJob, capeJob)
+            AccountsManager.refreshWardrobe()
         }
     }
 
     private suspend fun updateSkin(url: String) {
-        val skinFile = getSkinFile()
-        if (skinFile.exists()) FileUtils.deleteQuietly(skinFile) //清除一次皮肤文件
+        val targetFile = getSkinFile()
+        val tempFile = getTempSkinFile()
 
         runCatching {
-            SkinFileDownloader().download(url, skinFile, profileId) { modelType ->
+            FileUtils.deleteQuietly(tempFile)
+            SkinFileDownloader().download(url, tempFile, profileId) { modelType ->
                 this.skinModelType = modelType
             }
-            lInfo("Update skin success")
+            if (targetFile.exists()) FileUtils.deleteQuietly(targetFile)
+            FileUtils.moveFile(tempFile, targetFile)
+            Logger.info(TAG, "Update skin success")
         }.onFailure { e ->
-            lError("Could not update skin", e)
+            Logger.error(TAG, "Could not update skin", e)
+            FileUtils.deleteQuietly(tempFile)
         }
-        AccountsManager.refreshWardrobe()
     }
 
     private suspend fun updateCape(url: String) {
-        val capeFile = getCapeFile()
-        if (capeFile.exists()) FileUtils.deleteQuietly(capeFile) //清除一次披风文件
+        val targetFile = getCapeFile()
+        val tempFile = getTempCapeFile()
 
         runCatching {
-            CapeFileDownloader().download(url, capeFile, profileId)
-            lInfo("Update cape success")
+            FileUtils.deleteQuietly(tempFile)
+            CapeFileDownloader().download(url, tempFile, profileId)
+            if (targetFile.exists()) FileUtils.deleteQuietly(targetFile)
+            FileUtils.moveFile(tempFile, targetFile)
+            Logger.info(TAG, "Update cape success")
         }.onFailure { e ->
-            lError("Could not update cape", e)
+            Logger.error(TAG, "Could not update cape", e)
+            FileUtils.deleteQuietly(tempFile)
         }
-        AccountsManager.refreshWardrobe()
     }
 }

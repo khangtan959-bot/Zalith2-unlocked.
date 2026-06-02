@@ -20,6 +20,7 @@ package com.movtery.zalithlauncher.game.launch
 
 import androidx.collection.ArrayMap
 import com.movtery.zalithlauncher.BuildConfig
+import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.bridge.LoggerBridge
 import com.movtery.zalithlauncher.game.account.Account
 import com.movtery.zalithlauncher.game.account.isAuthServerAccount
@@ -36,21 +37,21 @@ import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.game.version.installed.VersionInfo
 import com.movtery.zalithlauncher.game.version.installed.getGameManifest
 import com.movtery.zalithlauncher.game.versioninfo.models.GameManifest
-import com.movtery.zalithlauncher.info.InfoDistributor
 import com.movtery.zalithlauncher.path.LibPath
 import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.ui.screens.content.elements.QuickPlay
 import com.movtery.zalithlauncher.utils.file.child
-import com.movtery.zalithlauncher.utils.logging.Logger.lDebug
-import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.network.ServerAddress
+import com.movtery.zalithlauncher.utils.string.compareVersion
 import com.movtery.zalithlauncher.utils.string.insertJSONValueList
 import com.movtery.zalithlauncher.utils.string.isEmptyOrBlank
 import com.movtery.zalithlauncher.utils.string.isLowerTo
 import com.movtery.zalithlauncher.utils.string.isNotEmptyOrBlank
 import com.movtery.zalithlauncher.utils.string.toUnicodeEscaped
 import java.io.File
+
+private const val TAG = "LaunchArgs"
 
 class LaunchArgs(
     private val runtimeLibraryPath: String,
@@ -97,7 +98,7 @@ class LaunchArgs(
                         } else {
                             val msg = "Quick Play for singleplayer is not supported and has been skipped."
                             LoggerBridge.append(msg)
-                            lWarning(msg)
+                            Logger.warning(TAG, msg)
                         }
                     }
                     is QuickPlay.Server -> {
@@ -129,7 +130,7 @@ class LaunchArgs(
         }.onFailure {
             val msg = "Unable to resolve the server address: $address. The automatic server join feature is unavailable."
             LoggerBridge.append(msg)
-            lWarning(msg, it)
+            Logger.warning(TAG, msg, it)
         }.getOrNull()?.let { parsed ->
             val args = if (quickPlay.isQuickPlayMultiplayer) {
                 val port = if (parsed.port < 0) {
@@ -168,14 +169,14 @@ class LaunchArgs(
                 offlineServer.getPort()?.let { port ->
                     val msg = "Using offline Yggdrasil server on port $port"
                     LoggerBridge.append(msg)
-                    lInfo(msg)
+                    Logger.info(TAG, msg)
                     argsList.add("-javaagent:${LibPath.AUTHLIB_INJECTOR.absolutePath}=http://localhost:$port")
                     argsList.add("-Dauthlibinjector.side=client")
                 } ?: run {
                     //无法获取端口号，说明服务器未成功启动
                     val msg = "Failed to start offline Yggdrasil server!"
                     LoggerBridge.append(msg)
-                    lWarning(msg)
+                    Logger.warning(TAG, msg)
                     //本次启动将被忽略，为避免浪费性能，关停服务器
                     offlineServer.stop()
                 }
@@ -203,12 +204,12 @@ class LaunchArgs(
                 }
                 configFilePath.writeText(content)
             }.onFailure {
-                lWarning("Failed to write fallback Log4j configuration autonomously!", it)
+                Logger.warning(TAG, "Failed to write fallback Log4j configuration autonomously!", it)
             }
         }
         argsList.add("-Dlog4j.configurationFile=${configFilePath.absolutePath}")
         argsList.add("-Dminecraft.client.jar=${clientJar.absolutePath}")
-        argsList.add("-Dminecraft.launcher.brand=${InfoDistributor.LAUNCHER_NAME}")
+        argsList.add("-Dminecraft.launcher.brand=${BuildKeys.LAUNCHER_NAME}")
         argsList.add("-Dminecraft.launcher.version=${BuildConfig.VERSION_NAME}")
 
         return argsList
@@ -279,7 +280,7 @@ class LaunchArgs(
         for (jarFile in classpath) {
             val jarFileObj = File(jarFile)
             if (!jarFileObj.exists()) {
-                lDebug("Ignored non-exists file: $jarFile")
+                Logger.debug(TAG, "Ignored non-exists file: $jarFile")
                 continue
             }
             classpathList.add(jarFile)
@@ -299,14 +300,61 @@ class LaunchArgs(
         val libs = LinkedHashMap<GameManifest.Library, String>()
 
         for (libItem in gameManifest.libraries) {
-            if (!(GameManifest.Rule.checkRules(libItem.rules) && !libItem.isNative)) continue
-            val path = libItem.progressLibrary() ?: continue
+            if (!GameManifest.Rule.checkRules(libItem.rules)) {
+                Logger.debug(TAG, "Library ignored due to unmatched rules: ${libItem.name}")
+                continue
+            }
+            if (libItem.isNative) {
+                Logger.debug(TAG, "Library ignored because it is a native library: ${libItem.name}")
+                continue
+            }
+            val path = libItem.progressLibrary() ?: run {
+                Logger.debug(TAG, "Library ignored due to library filtering: ${libItem.name}")
+                continue
+            }
             with(libSortFix) {
                 libs.insertLib(libItem, getLibrariesHome() + "/" + path)
             }
         }
-        return libs.values.toTypedArray<String>()
+
+        //最后进行去重
+        val deduplicated = LinkedHashMap<GameManifest.Library, String>()
+        val bestVersionMap = mutableMapOf<String, Pair<GameManifest.Library, String>>()
+
+        for ((lib, path) in libs) {
+            val nameParts = lib.name.split(":")
+            if (nameParts.size < 3) {
+                deduplicated[lib] = path
+                continue
+            }
+            val groupArtifact = "${nameParts[0]}:${nameParts[1]}"
+            val version = nameParts[2]
+
+            val existing = bestVersionMap[groupArtifact]
+            if (existing == null) {
+                bestVersionMap[groupArtifact] = lib to path
+                deduplicated[lib] = path
+            } else {
+                val existingVersion = existing.first.name.split(":")[2]
+                val cmp = version.compareVersion(existingVersion)
+                if (cmp > 0) {
+                    //重复库，仅保留高版本
+                    Logger.info(TAG, "Duplicate library detected: $groupArtifact, replacing version $existingVersion with higher version $version")
+                    deduplicated.remove(existing.first)
+                    bestVersionMap[groupArtifact] = lib to path
+                    deduplicated[lib] = path
+                } else if (cmp < 0) {
+                    Logger.debug(TAG, "Duplicate library detected: $groupArtifact, ignoring lower version $version (keeping $existingVersion)")
+                } else {
+                    //版本重复，仅保留一�?
+                    Logger.debug(TAG, "Duplicate library detected: $groupArtifact, ignoring duplicate version $version (keeping first occurrence)")
+                }
+            }
+        }
+
+        return deduplicated.values.toTypedArray<String>()
     }
+
 
     /**
      * @return 库相对路径
@@ -320,7 +368,7 @@ class LaunchArgs(
         val versionParts = versionSegment.split(".")
 
         getLibraryReplacement(name, versionParts)?.let { replacement ->
-            lDebug("Library ${this.name} has been changed to version ${replacement.newName.split(":").last()}")
+            Logger.debug(TAG, "Library ${this.name} has been changed to version ${replacement.newName.split(":").last()}")
             path = replacement.newPath
         }
 
@@ -359,7 +407,7 @@ class LaunchArgs(
     }
 
     private fun setLauncherInfo(verArgMap: MutableMap<String, String>) {
-        verArgMap["launcher_name"] = InfoDistributor.LAUNCHER_NAME
+        verArgMap["launcher_name"] = BuildKeys.LAUNCHER_NAME
         verArgMap["launcher_version"] = BuildConfig.VERSION_NAME
         verArgMap["version_type"] = version.getCustomInfo()
             .takeIf { it.isNotEmptyOrBlank() }

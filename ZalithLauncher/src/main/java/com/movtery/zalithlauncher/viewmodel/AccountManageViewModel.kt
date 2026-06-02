@@ -66,7 +66,7 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.LoginMenuOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.MicrosoftLoginOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.OtherLoginOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.ServerOperation
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.network.safeBodyAsJson
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,6 +94,8 @@ import java.util.UUID
 import javax.inject.Inject
 import io.ktor.client.plugins.ResponseException as KtorResponseException
 import kotlinx.coroutines.flow.combine as kotlinxCombine
+
+private const val TAG = "AccountManageVM"
 
 /**
  * 账号管理界面用户意图 (MVI Intent)
@@ -427,7 +429,7 @@ class AccountManageViewModel @Inject constructor(
 
     /** 内部方法：发送错误通知 */
     private fun emitError(title: String, message: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Main) {
             _effect.send(AccountManageEffect.ShowError(title, message))
         }
     }
@@ -438,7 +440,7 @@ class AccountManageViewModel @Inject constructor(
         vararg args: Any,
         duration: Int = Toast.LENGTH_SHORT
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Main) {
             _effect.send(AccountManageEffect.ShowToast(messageRes, args.toList(), duration))
         }
     }
@@ -784,7 +786,7 @@ class AccountManageViewModel @Inject constructor(
 
         is ResponseException -> th.responseMessage
         else -> {
-            lError("An unknown exception was caught!", th)
+            Logger.error(TAG, "An unknown exception was caught!", th)
             val errorMessage =
                 th.localizedMessage ?: th.message ?: th::class.qualifiedName ?: "Unknown error"
             context.getString(R.string.error_unknown, errorMessage)

@@ -75,10 +75,12 @@ import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.SimpleIDLi
 import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.TextInputSettingsCard
 import com.movtery.zalithlauncher.ui.screens.content.versions.layouts.StatefulDropdownMenuFollowGlobal
 import com.movtery.zalithlauncher.ui.screens.content.versions.layouts.ToggleableIntSliderSettingsCard
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.platform.getMaxMemoryForSettings
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
+
+private const val TAG = "VersionConfigScreen"
 
 @Composable
 fun VersionConfigScreen(
@@ -86,6 +88,7 @@ fun VersionConfigScreen(
     versionsScreenKey: TitledNavKey?,
     version: Version,
     backToMainScreen: () -> Unit,
+    onCheckVulkan: () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
     if (!version.isValid()) {
@@ -134,6 +137,7 @@ fun VersionConfigScreen(
                         .fillMaxWidth()
                         .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
                     config = config,
+                    onCheckVulkan = onCheckVulkan,
                     submitError = submitError
                 )
             }
@@ -422,6 +426,7 @@ private fun GameConfigs(
 @Composable
 private fun SupportConfigs(
     config: VersionConfig,
+    onCheckVulkan: () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -506,6 +511,14 @@ private fun SupportConfigs(
             )
         }
 
+        SettingsCard(
+            modifier = Modifier.fillMaxWidth(),
+            position = CardPosition.Middle,
+            title = stringResource(R.string.game_vulkan_check_title),
+            summary = stringResource(R.string.game_vulkan_check_text),
+            onClick = onCheckVulkan
+        )
+
         //检查麦克风
         var microphoneState by remember { mutableStateOf<MicrophoneCheckState>(MicrophoneCheckState.None) }
         MicrophoneCheckOperation(
@@ -540,7 +553,7 @@ private fun VersionConfig.saveOrShowError(
     runCatching {
         saveWithThrowable()
     }.onFailure { e ->
-        lError("Failed to save version config!", e)
+        Logger.error(TAG, "Failed to save version config!", e)
         submitError(
             ErrorViewModel.ThrowableMessage(
                 title = context.getString(R.string.versions_config_failed_to_save),

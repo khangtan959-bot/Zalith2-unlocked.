@@ -402,6 +402,9 @@
     <string name="game_menu_option_hotbar_rule_custom">自定义</string>
     <string name="game_menu_option_hotbar_width">快捷栏宽度</string>
     <string name="game_menu_option_hotbar_height">快捷栏高度</string>
+    <string name="game_menu_option_hotbar_double_click">双击与副手交换物品</string>
+    <string name="game_menu_option_hotbar_long_click">长按丢弃所选物品</string>
+    <string name="game_menu_option_hotbar_long_click_delay">长按快捷栏触发延迟</string>
     <string name="game_menu_option_show_menu">开启菜单悬浮窗</string>
     <string name="game_menu_option_show_menu_hided">已关闭游戏菜单悬浮窗，您可以通过系统返回键调用游戏菜单</string>
     <string name="game_menu_option_controls_opacity">控制布局不透明度</string>
@@ -420,6 +423,17 @@
     <string name="game_styles_joystick_hide_when_gamepad">在手柄操作时隐藏</string>
     <string name="game_styles_save_failed">保存样式失败</string>
     <string name="game_saponsorship_finished_game">启动器已经成功运行了 %s 次游戏！如果您觉得好用的话，可以考虑赞助支持一下作者喔！qwq</string>
+
+    <string name="game_vulkan_check_title">Vulkan 检测</string>
+    <string name="game_vulkan_check_text">检查您的设备是否支持使用 Vulkan 运行 Minecraft 26.2+，结果仅供参考</string>
+    <string name="game_vulkan_check_version">Vulkan 版本：%s</string>
+    <string name="game_vulkan_check_turnip">使用 Turnip：%s</string>
+    <string name="game_vulkan_check_extensions">依赖的扩展：</string>
+    <string name="game_vulkan_check_missing_extensions">缺失的扩展：</string>
+    <string name="game_vulkan_check_features">依赖的功能：</string>
+    <string name="game_vulkan_check_missing_features">缺失的功能：</string>
+    <string name="game_vulkan_check_unsupp">您的设备不支持使用 Vulkan 运行 Minecraft 26.2+</string>
+    <string name="game_vulkan_check_supp">您的设备可以使用 Vulkan 运行 Minecraft 26.2+</string>
     <!--  渲染器  -->
     <string name="renderer_version_support">MC 版本支持：</string>
     <string name="renderer_version_unsupported_warning">当前渲染器 %s 不支持该游戏版本，继续使用可能导致渲染错误或游戏崩溃！您确定要无视风险坚持访问吗？</string>
@@ -562,6 +576,8 @@
     <string name="cape_name_founder_s">创始人披风</string>
     <string name="cape_name_copper">铜披风</string>
     <string name="cape_name_zombie_horse">僵尸马披风</string>
+    <string name="cape_name_builder">建造者披风</string>
+    <string name="cape_name_crafter">工匠披风</string>
     <!--  文件管理  -->
     <string name="files_back_to_parent">返回上一级</string>
     <string name="files_create_dir">创建目录</string>
@@ -830,6 +846,7 @@
     <string name="minecraft_download_failed_retried">在此之前，启动器已经尝试过重试一次，但仍有任务下载失败</string>
     <string name="minecraft_download_failed_notfound">某些依赖文件无法下载，如果多次尝试仍失败，可能是游戏缺少必要的库文件，建议重新安装游戏。</string>
     <!--  设置  -->
+    <string name="settings_title_blur">模糊效果</string>
     <string name="settings_element_selected">当前选择项：%s</string>
     <string name="settings_label_ignore_if_blank">留白则忽略此设置</string>
     <string name="settings_tab_renderer">渲染设置</string>
@@ -1028,6 +1045,7 @@
     <string name="settings_launcher_background_opacity_summary">调整背景元素的不透明度，以获得更好的视觉效果并避免与背景冲突</string>
     <string name="settings_launcher_background_video_volume_title">视频背景音量</string>
     <string name="settings_launcher_background_video_volume_summary">背景内容是视频时，可以通过这个选项调整音量</string>
+    <string name="settings_launcher_background_blur_summary">调整背景的模糊效果，此选项较为消耗性能</string>
     <string name="settings_launcher_festivals_effects_title">持续型节日彩蛋效果</string>
     <string name="settings_launcher_festivals_effects_summary">在特定时间段显示持续型彩蛋效果</string>
     <string name="settings_launcher_home_page_title">主页</string>

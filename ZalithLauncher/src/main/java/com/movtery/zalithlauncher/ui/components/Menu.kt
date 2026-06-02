@@ -78,7 +78,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.screens.content.elements.DisabledAlpha
+import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
 import com.movtery.zalithlauncher.ui.theme.backgroundColor
 import com.movtery.zalithlauncher.ui.theme.cardTitleColor
 import com.movtery.zalithlauncher.ui.theme.itemColor
@@ -720,6 +722,7 @@ fun MenuButtonLayout(
     shape: Shape = MaterialTheme.shapes.large,
     color: Color = itemColor(influencedByBackground),
     contentColor: Color = onItemColor(),
+    blur: Int = AllSettings.backgroundBlur.state,
     onClick: () -> Unit = {},
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
@@ -739,7 +742,9 @@ fun MenuButtonLayout(
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .backgroundGlass(blur, color, influencedByBackground),
             horizontalArrangement = horizontalArrangement,
             verticalAlignment = verticalAlignment,
             content = content

@@ -92,7 +92,6 @@ import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.Sc
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.VersionInfoMap
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.initAll
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.mapWithVersions
-import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.utils.isChinese
@@ -433,8 +432,6 @@ private fun Versions(
                         modifier = Modifier.weight(1f),
                         value = viewModel.searchMCVersion,
                         onValueChange = { viewModel.filterWith(searchMCVersion = it) },
-                        color = cardColor(),
-                        contentColor = onCardColor(),
                         singleLine = true,
                         textStyle = TextStyle(color = onCardColor()).copy(fontSize = 12.sp),
                         hint = {
@@ -523,6 +520,7 @@ private fun ProjectInfo(
         when (val result = projectResult) {
             is DownloadAssetsState.Getting -> {
                 LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(all = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -574,6 +572,7 @@ private fun ProjectInfo(
                 val screenshots = remember { project.platformScreenshots() }
 
                 LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(all = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -687,9 +686,11 @@ private fun ProjectInfo(
                 }
             }
             is DownloadAssetsState.Error -> {
-                Box(Modifier
-                    .fillMaxSize()
-                    .padding(all = 12.dp)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(all = 12.dp)
+                ) {
                     val message = if (result.args != null) {
                         stringResource(result.message, *result.args)
                     } else {

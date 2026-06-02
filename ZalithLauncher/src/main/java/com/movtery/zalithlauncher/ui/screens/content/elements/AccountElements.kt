@@ -59,6 +59,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -106,6 +107,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.account.Account
 import com.movtery.zalithlauncher.game.account.AccountType
@@ -124,7 +126,6 @@ import com.movtery.zalithlauncher.game.account.wardrobe.capeLocalRes
 import com.movtery.zalithlauncher.game.account.yggdrasil.PlayerProfile
 import com.movtery.zalithlauncher.game.account.yggdrasil.findUsing
 import com.movtery.zalithlauncher.game.account.yggdrasil.getFile
-import com.movtery.zalithlauncher.info.InfoDistributor
 import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.path.URL_MINECRAFT_PURCHASE
 import com.movtery.zalithlauncher.ui.components.BaseIconTextButton
@@ -145,12 +146,14 @@ import com.movtery.zalithlauncher.ui.theme.itemColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.ui.theme.onItemColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
-import com.movtery.zalithlauncher.utils.logging.Logger.lError
+import com.movtery.zalithlauncher.utils.logging.Logger
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
+
+private const val TAG = "AccountElements"
 
 /** 账号登录菜单操作状态 */
 sealed interface LoginMenuOperation {
@@ -654,7 +657,7 @@ fun MicrosoftLoginTipDialog(
                     append(
                         stringResource(
                             R.string.account_supporting_microsoft_tip_hint_t3,
-                            InfoDistributor.LAUNCHER_NAME
+                            BuildKeys.LAUNCHER_NAME
                         )
                     )
                     append(stringResource(R.string.account_supporting_microsoft_tip_hint_t4))
@@ -1150,6 +1153,7 @@ sealed interface ChangeCape {
     ) : ChangeCape
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun ChangeSkinDialog(
@@ -1623,7 +1627,7 @@ private fun getCapeAvatar(cape: PlayerProfile.Cape, size: Int): Bitmap? {
                 return getCapeAvatar(bitmap, size)
             }
         }.onFailure { e ->
-            lError("Failed to load cape avatar from locally!", e)
+            Logger.error(TAG, "Failed to load cape avatar from locally!", e)
         }
     }
     return null
@@ -1651,7 +1655,7 @@ private fun getSkinAvatarFromAccount(context: Context, account: Account, size: I
                 return getSkinAvatar(bitmap, size)
             }
         }.onFailure { e ->
-            lError("Failed to load skin avatar from locally!", e)
+            Logger.error(TAG, "Failed to load skin avatar from locally!", e)
         }
     }
     return getDefaultAvatar(context, size)

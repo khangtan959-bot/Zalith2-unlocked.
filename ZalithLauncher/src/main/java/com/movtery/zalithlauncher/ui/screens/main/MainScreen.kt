@@ -72,11 +72,11 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.coroutine.Task
 import com.movtery.zalithlauncher.coroutine.TaskSystem
 import com.movtery.zalithlauncher.game.version.installed.Version
-import com.movtery.zalithlauncher.info.InfoDistributor
 import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.base.applyFullscreen
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
@@ -326,7 +326,7 @@ private fun <E: TitledNavKey> TopBar(
                 if (parent == null) {
                     if (festivals.isEmpty()) {
                         Text(
-                            text = InfoDistributor.LAUNCHER_IDENTIFIER,
+                            text = BuildKeys.LAUNCHER_IDENTIFIER,
                             style = style,
                             softWrap = softWarp,
                             maxLines = maxLines
@@ -500,9 +500,9 @@ private fun NavigationUI(
                     LauncherScreen(
                         backStackViewModel = screenBackStackModel,
                         navigateToVersions = navigateToVersions,
-                        onLaunchGame = {
+                        onLaunchGame = { version ->
                             eventViewModel.sendEvent(
-                                EventViewModel.Event.Launch.Main
+                                EventViewModel.Event.Launch.Game(version)
                             )
                         },
                         onOpenLink = {
@@ -653,7 +653,7 @@ private fun TaskMenu(
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp)
         ) {
             Column {
-                CardTitleLayout {
+                CardTitleLayout(blur = 0) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

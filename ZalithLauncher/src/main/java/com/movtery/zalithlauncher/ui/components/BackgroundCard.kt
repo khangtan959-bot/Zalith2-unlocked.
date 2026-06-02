@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import com.movtery.zalithlauncher.setting.AllSettings
+import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.cardTitleColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
@@ -51,6 +53,7 @@ fun BackgroundCard(
         contentColor = onCardColor()
     ),
     elevation: CardElevation = CardDefaults.cardElevation(),
+    blur: Int = AllSettings.backgroundBlur.state,
     border: BorderStroke? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -60,8 +63,12 @@ fun BackgroundCard(
         colors = colors,
         elevation = elevation,
         border = border,
-        content = content
-    )
+    ) {
+        Column(
+            modifier = Modifier.backgroundGlass(blur, colors.containerColor, influencedByBackground),
+            content = content
+        )
+    }
 }
 
 /**
@@ -79,6 +86,7 @@ fun BackgroundCard(
         disabledContainerColor = cardColor(influencedByBackground)
     ),
     elevation: CardElevation = CardDefaults.cardElevation(),
+    blur: Int = AllSettings.backgroundBlur.state,
     border: BorderStroke? = null,
     onClick: () -> Unit,
     enabled: Boolean = true,
@@ -92,8 +100,12 @@ fun BackgroundCard(
         border = border,
         onClick = onClick,
         enabled = enabled,
-        content = content
-    )
+    ) {
+        Column(
+            modifier = Modifier.backgroundGlass(blur, colors.containerColor, influencedByBackground),
+            content = content
+        )
+    }
 }
 
 /**
@@ -106,19 +118,26 @@ fun CardTitleLayout(
     influencedByBackground: Boolean = true,
     alpha: Float = 0.5f,
     color: Color = influencedByBackgroundColor(
-        color = cardTitleColor(),
+        color = cardTitleColor(alpha),
         enabled = influencedByBackground
     ),
     contentColor: Color = onCardColor(),
-    content: @Composable @UiComposable () -> Unit
+    blur: Int = AllSettings.backgroundBlur.state,
+    content: @Composable @UiComposable ColumnScope.() -> Unit
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = color,
             contentColor = contentColor,
-            content = content
-        )
+        ) {
+            Column(
+                modifier = Modifier.backgroundGlass(blur, color, influencedByBackground),
+                content = content
+            )
+        }
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
     }
 }

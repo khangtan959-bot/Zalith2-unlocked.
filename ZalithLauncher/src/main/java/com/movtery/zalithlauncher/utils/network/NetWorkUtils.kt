@@ -31,11 +31,11 @@ import com.movtery.zalithlauncher.path.TIME_OUT
 import com.movtery.zalithlauncher.path.URL_USER_AGENT
 import com.movtery.zalithlauncher.path.createOkHttpClient
 import com.movtery.zalithlauncher.path.createRequestBuilder
+import com.movtery.zalithlauncher.ui.theme.showThemed
 import com.movtery.zalithlauncher.utils.copyText
 import com.movtery.zalithlauncher.utils.file.compareSHA1
 import com.movtery.zalithlauncher.utils.file.ensureParentDirectory
-import com.movtery.zalithlauncher.utils.logging.Logger.lDebug
-import com.movtery.zalithlauncher.utils.logging.Logger.lWarning
+import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.string.isEmptyOrBlank
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +59,8 @@ import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
+
+private const val TAG = "NetWorkUtils"
 
 /**
  * @return 当前网络是否可用
@@ -164,7 +166,7 @@ fun downloadFileWithHttp(
             }
 
             if (e.isInterruptedIOException()) {
-                lDebug("Download task cancelled. url: $url")
+                Logger.debug(TAG, "Download task cancelled. url: $url")
                 return //取消了，不需要抛出异常
             } else if (e is FileNotFoundException) {
                 if (attempt >= maxAttempts) throw e //目标不存在
@@ -402,7 +404,7 @@ suspend fun fetchStringFromUrls(urls: List<String>): String = withContext(Dispat
             break@loop
         }.onFailure { th ->
             if (th is CancellationException || th.isInterruptedIOException()) throw th
-            lDebug("Source $url failed!", th)
+            Logger.debug(TAG, "Source $url failed!", th)
             lastException = th
         }
     }
@@ -450,7 +452,7 @@ fun Activity.openLink(link: String, dataType: String?) {
             copyText(COPY_LABEL_LINK, link, this)
             dialog.dismiss()
         }
-        .show()
+        .showThemed()
 }
 
 /**
@@ -468,7 +470,7 @@ fun Activity.openLinkInternal(link: String, dataType: String? = null) {
         }
         startActivity(browserIntent)
     } catch (e: Exception) {
-        lWarning("Failed to open link: $link", e)
+        Logger.warning(TAG, "Failed to open link: $link", e)
     }
 }
 

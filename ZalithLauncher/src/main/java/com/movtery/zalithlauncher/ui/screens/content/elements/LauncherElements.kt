@@ -22,13 +22,19 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Parcelable
 import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.gif.GifDecoder
@@ -45,20 +51,31 @@ import com.movtery.zalithlauncher.game.renderer.RendererInterface
 import com.movtery.zalithlauncher.game.renderer.Renderers
 import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.setting.AllSettings
+import com.movtery.zalithlauncher.setting.enums.BackgroundBlur
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.VideoPlayer
 import com.movtery.zalithlauncher.ui.screens.content.FirstLoginMenu
+import com.movtery.zalithlauncher.utils.canHandlePermission
 import com.movtery.zalithlauncher.utils.checkStoragePermissions
 import com.movtery.zalithlauncher.utils.file.InvalidFilenameException
 import com.movtery.zalithlauncher.utils.file.checkFilenameValidity
+import com.movtery.zalithlauncher.utils.hasStoragePermission
 import com.movtery.zalithlauncher.utils.string.isBiggerTo
 import com.movtery.zalithlauncher.utils.string.isLowerTo
 import com.movtery.zalithlauncher.viewmodel.BackgroundViewModel
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
+import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
+import dev.chrisbanes.haze.HazeInputScale
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import java.io.File
+import kotlin.math.sqrt
 
 @Parcelize
 sealed interface QuickPlay : Parcelable {
@@ -120,6 +137,7 @@ fun LaunchGameOperation(
     launchGameOperation: LaunchGameOperation,
     updateOperation: (LaunchGameOperation) -> Unit,
     exitActivity: () -> Unit,
+    waitForVulkanChecker: suspend () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
     toAccountManageScreen: (FirstLoginMenu) -> Unit = {},
     toVersionManageScreen: () -> Unit = {}
@@ -258,8 +276,9 @@ fun LaunchGameOperation(
                 }
 
                 //为可配置的渲染器检查文件管理权限
+                //前提：系统支持这个设置
                 if (
-                    !checkStoragePermissions() &&
+                    canHandlePermission &&  !hasStoragePermission &&
                     RendererPluginManager.isConfigurablePlugin(version.getRenderer())
                 ) {
                     updateOperation(LaunchGameOperation.RendererNoStoragePermission(currentRenderer, version, quickPlay))
@@ -278,7 +297,13 @@ fun LaunchGameOperation(
                     offlineAccountLogin = false
                     quickPlaySingle = quickPlay
                 }
-                LaunchGame.launchGame(activity, version, exitActivity, submitError)
+                LaunchGame.launchGame(
+                    context = activity,
+                    version = version,
+                    exitActivity = exitActivity,
+                    waitForVulkanChecker = waitForVulkanChecker,
+                    submitError = submitError
+                )
                 updateOperation(LaunchGameOperation.None)
             }
         }
@@ -291,23 +316,113 @@ fun Background(
     modifier: Modifier = Modifier,
     allowVideo: Boolean = true
 ) {
-    when {
-        viewModel.isVideo && allowVideo -> {
-            VideoPlayer(
-                videoUri = Uri.fromFile(viewModel.backgroundFile),
-                modifier = modifier,
-                refreshTrigger = viewModel.refreshTrigger,
-                volume = AllSettings.videoBackgroundVolume.state / 100f
-            )
-        }
-        viewModel.isImage -> {
-            BackgroundImage(
-                modifier = modifier,
-                imageFile = viewModel.backgroundFile,
-                refreshTrigger = viewModel.refreshTrigger
-            )
+    Box(
+        modifier = modifier.backgroundBlur(
+            blur = AllSettings.backgroundBlur.state,
+            hazeState = viewModel.hazeState,
+        )
+    ) {
+        when {
+            viewModel.isVideo && allowVideo -> {
+                VideoPlayer(
+                    videoUri = Uri.fromFile(viewModel.backgroundFile),
+                    modifier = Modifier.fillMaxSize(),
+                    refreshTrigger = viewModel.refreshTrigger,
+                    volume = AllSettings.videoBackgroundVolume.state / 100f
+                )
+            }
+            viewModel.isImage -> {
+                BackgroundImage(
+                    modifier = Modifier.fillMaxSize(),
+                    imageFile = viewModel.backgroundFile,
+                    refreshTrigger = viewModel.refreshTrigger
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun Modifier.backgroundBlur(
+    blur: Int,
+    hazeState: HazeState,
+): Modifier {
+    return when (AllSettings.backgroundBlurType.state) {
+        BackgroundBlur.Background -> this.glass(blur, null, null)
+        BackgroundBlur.Foreground -> this.hazeSource(hazeState)
+    }
+}
+
+/**
+ * 背景模糊效果
+ * @param enabled 是否应用模糊效果
+ */
+@Composable
+fun Modifier.backgroundGlass(
+    blur: Int,
+    color: Color,
+    enabled: Boolean = true,
+): Modifier {
+    if (AllSettings.backgroundBlurType.state == BackgroundBlur.Background) return this
+    if (!enabled) return this
+    val state = LocalBackgroundViewModel.current?.hazeState ?: return this
+    return this.glass(blur, color, state)
+}
+
+/**
+ * 背景模糊效果
+ */
+@Composable
+private fun Modifier.glass(
+    blur: Int,
+    color: Color?,
+    hazeState: HazeState?,
+): Modifier {
+    if (blur <= 0 || AllSettings.launcherBackgroundOpacity.state >= 100) return this
+
+    val t = remember(blur) {
+        (blur / 80f).coerceIn(0f, 1f)
+    }
+
+    val inputScale = remember(t) {
+        val scale = lerp(
+            start = 0.66f,
+            stop = 0.8f,
+            fraction = sqrt(t)
+        )
+        HazeInputScale.Fixed(scale)
+    }
+    val noiseFactor = remember(t) {
+        lerp(
+            start = 0.3f,
+            stop = 0.25f,
+            fraction = sqrt(t)
+        )
+    }
+    val colorEffects = remember(t, color) {
+        val whiteAlpha = lerp(
+            start = 0f,
+            stop = 0.25f,
+            fraction = sqrt(t)
+        )
+        buildList {
+            if (color != null) {
+                add(HazeColorEffect.tint(color, BlendMode.SrcOver))
+            }
+            add(HazeColorEffect.tint(Color.White.copy(alpha = whiteAlpha), BlendMode.Softlight))
+        }
+    }
+
+    return this
+        .hazeEffect(hazeState) {
+            this.inputScale = inputScale
+            blurEffect {
+                this.blurEnabled = true
+                this.blurRadius = blur.dp
+                this.noiseFactor = noiseFactor
+                this.colorEffects = colorEffects
+            }
+        }
 }
 
 @Composable

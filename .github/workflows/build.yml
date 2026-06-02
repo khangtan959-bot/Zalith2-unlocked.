@@ -2,22 +2,7 @@ name: Build APK
 
 on:
   workflow_dispatch:
-    # Thêm phần này để tạo menu chọn khi nhấn "Run workflow" trên GitHub UI
-    inputs:
-      variant:
-        description: 'Chọn phiên bản muốn build'
-        required: true
-        default: 'Release'
-        type: choice
-        options:
-          - Release
-          - Debug
   workflow_call:
-    # Giữ nguyên để workflow khác gọi tới vẫn truyền biến vào được
-    inputs:
-      variant:
-        required: true
-        type: string
     secrets:
       KEY_PASSWORD:
         required: false
@@ -63,20 +48,11 @@ jobs:
       - name: Build APK for ${{ matrix.arch }}
         run: |
           chmod +x gradlew
-          ./gradlew ZalithLauncher:assemble${{ inputs.variant }} -Darch=${{ matrix.arch }}
+          ./gradlew ZalithLauncher:assembleRelease -Darch=${{ matrix.arch }}
 
       - name: Upload Release APK for ${{ matrix.arch }}
-        if: ${{ inputs.variant == 'Release' }}
         continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: release apk (${{ matrix.arch }})
           path: ZalithLauncher/build/outputs/apk/release/*.apk
-
-      - name: Upload Debug APK for ${{ matrix.arch }}
-        if: ${{ inputs.variant == 'Debug' }}
-        continue-on-error: true
-        uses: actions/upload-artifact@v7
-        with:
-          name: debug apk (${{ matrix.arch }})
-          path: ZalithLauncher/build/outputs/apk/debug/*.apk
